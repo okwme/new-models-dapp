@@ -86,7 +86,7 @@ export default {
           var fileReader = new FileReader()
           fileReader.onloadend = async (e) => {
             var arrayBuffer = e.target.result
-            let response = await axios.post('http://localhost:9000/cloudinary', {password: this.password, workId: this.workId})
+            let response = await axios.post('/cloudinary', {password: this.password, workId: this.workId})
             console.log(response)
 
             let blob = arrayBufferToBlob(arrayBuffer, file.type)

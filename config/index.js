@@ -10,7 +10,16 @@ module.exports = {
     // Paths
     assetsSubDirectory: 'static',
     assetsPublicPath: '/',
-    proxyTable: {},
+    proxyTable: {
+      '/cloudinary': {
+        target: 'http://localhost:9000/cloudinary',
+        changeOrigin: true
+      },
+      '/metadata': {
+        target: 'http://localhost:9000/metadata',
+        changeOrigin: true
+      }
+    },
 
     // Various Dev Server settings
     host: 'localhost', // can be overwritten by process.env.HOST
