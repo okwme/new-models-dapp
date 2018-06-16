@@ -3,8 +3,8 @@
 
 [[redirects]]
   from = "/cloudinary"
-  to = "/.netlify/functions/cloudinary"
+  to = "https://new-models.netlify.com/.netlify/functions/cloudinary"
 
 [[redirects]]
   from = "/metadata/*"
-  to = "/.netlify/functions/metadata/:splat"
+  to = "https://new-models.netlify.com/.netlify/functions/metadata/:splat"
