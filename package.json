@@ -24,6 +24,7 @@
         "blob-util": "^2.0.2",
         "cloudinary": "^1.11.0",
         "dot-env": "0.0.1",
+        "moment": "^2.22.2",
         "new-models-contracts": "github:okwme/new-models-contracts",
         "portis": "^1.2.1",
         "route-parser": "0.0.5",
