@@ -90,10 +90,10 @@ export default {
             console.log(response)
 
             let blob = arrayBufferToBlob(arrayBuffer, file.type)
-            let soldityHash = await utils.soliditySha3(blob)
-
-            this.hash = soldityHash
             let base64 = await blobToBase64String(blob)
+
+            let soldityHash = await utils.soliditySha3(base64)
+            this.hash = soldityHash
 
             await axios.post('https://api.cloudinary.com/v1_1/dszcbwdrl/auto/upload', {
               file: 'data:' + file.type + ';base64,' + base64,
