@@ -1,2 +1,10 @@
 [build]
   functions = "built-functions"
+
+[[redirects]]
+  from = "/cloudinary"
+  to = "/.netlify/functions/cloudinary"
+
+[[redirects]]
+  from = "/metadata/*"
+  to = "/.netlify/functions/metadata/:splat"
