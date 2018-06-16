@@ -23,7 +23,7 @@
         "axios": "^0.18.0",
         "blob-util": "^2.0.2",
         "cloudinary": "^1.11.0",
-        "dot-env": "0.0.1",
+        "dotenv": "^6.0.0",
         "moment": "^2.22.2",
         "new-models-contracts": "github:okwme/new-models-contracts",
         "portis": "^1.2.1",
