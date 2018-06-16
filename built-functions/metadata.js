@@ -161,6 +161,7 @@ var Route = __webpack_require__(308);
 
 
 exports.handler = function (event, context, callback) {
+    console.log(event);
     var headers = {
         "Content-Type": "text/html; charset=utf-8",
         'Access-Control-Allow-Origin': '*',

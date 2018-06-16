@@ -3,6 +3,7 @@ const Route = require('route-parser');
 import {workIdFromTokenId, editionFromTokenId} from '../src/assets/utils'
 
 exports.handler = function(event, context, callback) {
+    console.log(event)
     let headers = {
         "Content-Type": "text/html; charset=utf-8",
         'Access-Control-Allow-Origin': '*',
