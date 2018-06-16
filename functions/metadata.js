@@ -12,7 +12,11 @@ exports.handler = function(event, context, callback) {
         'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
     }
     var route = new Route('/metadata/:tokenId');
+    var route2 = new Route('/.netlify/functions/metadata/:tokenId')
     let result = route.match(event.path)
+    if (!result) {
+        result = route2.match(event.path)
+    }
     let works = {
         "1" : {
             name: "Name",

@@ -169,7 +169,11 @@ exports.handler = function (event, context, callback) {
         'Access-Control-Allow-Headers': 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
     };
     var route = new Route('/metadata/:tokenId');
+    var route2 = new Route('/.netlify/functions/metadata/:tokenId');
     var result = route.match(event.path);
+    if (!result) {
+        result = route2.match(event.path);
+    }
     var works = {
         "1": {
             name: "Name",
