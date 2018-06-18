@@ -12,17 +12,21 @@ const debug = false
 
 const state = {
   unlocked: false,
+  querying: false,
+  tryAgain: false,
   account: null,
   admin: null,
   billy: null,
   status: null,
   error: null,
   networkId: null,
+  correctNetwork: 4,
   Patches: null,
   Controller: null,
   patches: [],
   works: [],
-  log: []
+  log: [],
+  notifications: []
 }
 
 export default new Vuex.Store({

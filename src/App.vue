@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <notifications />
     <router-link to="/">home</router-link>
     <router-link to="/badmin">admin</router-link>
     <status/>
@@ -10,12 +11,13 @@
 </template>
 
 <script>
+import Notifications from './components/Notifications.vue'
 import Status from './components/Status.vue'
 import { mapActions, mapState } from 'vuex'
 export default {
   name: 'App',
 
-  components: { Status },
+  components: { Status, Notifications },
   methods: {
     ...mapActions(['begin', 'reset'])
   },
@@ -25,11 +27,11 @@ export default {
   watch: {
     account() {
       console.log('account changed')
-      this.reset()
+      // this.reset()
     },
     locked() {
       console.log('locked changed')
-      this.reset()
+      // this.reset()
     }
   },
   mounted() {
@@ -50,7 +52,6 @@ body{
   font-family: Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: grey;
   margin-top: 60px;
 }

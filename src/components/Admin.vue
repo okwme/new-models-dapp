@@ -114,7 +114,7 @@ export default {
       }
     },
     claimed (workId) {
-      return this.workPatches && this.workPatches[workId - 1].length === 10
+      return this.workPatches && this.workPatches[workId - 1].patches.length === 10
     },
     submitAddWork () {
       if (!this.workId || !this.artist || !this.hash) {

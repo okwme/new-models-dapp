@@ -1,68 +1,141 @@
 import { Patches, Controller } from 'new-models-contracts'
 import utils from 'web3-utils'
-import {workIdFromTokenId} from '../assets/utils'
+import {workIdFromTokenId, getNetwork} from '../assets/utils'
 
 export default {
   async begin({ commit, dispatch }) {
+    console.log('begin')
     commit('addLog', 'begin')
     try {
-      await dispatch('getNetwork')
-      await dispatch('getAccount')
-      await dispatch('getContracts')
-      dispatch('beginPolling')
+      dispatch('poll')
     } catch (error) {
+      console.log('begin failed')
       console.error(error)
+      console.log(error.message)
+      // dispatch('createNotification', {
+      //   type: 'error',
+      //   title: 'Initialization Error',
+      //   subtitle: "We're having trouble connecting to the Ethereum Network."
+      // })
       commit('setError', 'Initialization Error')
     }
   },
-  async reset({ commit, dispatch }) {
-    commit('addLog', 'reset')
-    await dispatch('getNetwork')
-    await dispatch('getAccount')
-    await dispatch('getContracts')
-    dispatch('getAdmin')
-    dispatch('queryPatches')
-    dispatch('queryWorks')
-  },
-  beginPolling({ dispatch }) {
-    setInterval(async () => {
-      await dispatch('getNetwork')
-      await dispatch('getAccount')
-    }, 3000)
-  },
-  async getNetwork({ commit, state }) {
+  async reset({ state, commit, dispatch }) {
+    if (state.querying) {
+      commit('setTryAgain', true)
+      return
+    }
+    console.log('reset')
+    commit('setQuerying', true)
     try {
-      // global.web3.eth.net.getId((err, resp) => {
-      //   console.log(err, resp)
-      // })
-      const networkId = await global.web3.eth.net.getId()
-      if (state.networkId !== networkId) {
-        commit('addLog', 'setNetwork ' + networkId)
-        commit('setNetwork', networkId)
+      await dispatch('getContracts')
+      dispatch('getAdmin')
+      dispatch('queryPatches')
+      dispatch('queryWorks')
+      commit('setQuerying', false)
+      if (state.tryAgain) {
+        commit('setTryAgain', false)
+        dispatch('reset')
       }
     } catch (error) {
-      commit('setError', 'Network Error')
+      let title, body, link
+      switch (error.message) {
+        case ('wrong-network'):
+
+          title = 'Error Connecting To The Network'
+          body = 'Looks like you have web3 available, but are connected to the wrong network. You are currently on <b>' + getNetwork(state.networkId) + '</b>, but need to be on <b>' + getNetwork(state.correctNetwork) + '</b>.<br><br>For help connecting please check out our help section.'
+          link = {
+            to: '/faq#connecting',
+            text: 'Help'
+          }
+
+          break
+        default:
+          title = 'Error Connecting To The Network'
+      }
+      commit('addNotification', {
+        type: 'error',
+        title,
+        body,
+        link
+      })
+      console.error(error)
+    }
+  },
+  async poll({state, commit, dispatch}) {
+    try {
+      let networkId = state.networkId + 0
+      await dispatch('getNetwork')
+      if (networkId !== state.networkId) dispatch('reset')
+      await dispatch('getAccount')
+      setTimeout(() => {
+        dispatch('poll')
+      }, 3000)
+    } catch (error) {
+      let title, body
+      let link = {
+        to: '/faq#wallets',
+        text: 'Help'
+      }
+      let poll = true
+      switch (error.message) {
+        case ('User denied transaction signature.'):
+          title = 'Error Connecting To The Network'
+          body = "Looks like you aren't connected to the Ethereum Network. The popup you just dismissed is a free wallet service called <a target='_blank' href='https://portis.io/'>Portis</a> that you can use by refreshing the page. If you'd like to hear about other wallet options including <a target='_blank' href='https://metamask.io/'>Metamask</a> and <a target='_blank' href='https://www.uport.me/'>uPort</a> please check out our help section."
+          poll = false
+          break
+        case ('account-locked'):
+          title = 'Wallet is Locked'
+          body = "Looks like your wallet is locked. Please unlock it if you'd like to interact with the contracts. If you'd like more information about this error, please see out help page."
+          break
+        default:
+          title = 'Error Connecting To The Network'
+          body = error.message
+      }
+      commit('addNotification', {
+        type: 'error',
+        title,
+        body,
+        link
+      })
+      if (poll) {
+        setTimeout(() => {
+          dispatch('poll')
+        }, 3000)
+      } else {
+        //       global.web3 = new Web3(
+        //   new PortisProvider({
+        //     apiKey: 'e1d5ea735b084b248c33c221873d08dc',
+        //     network: 'rinkeby'
+        //   })
+        // )
+      }
+      console.log(error.message)
+      console.error(error)
+    }
+  },
+  async getNetwork({ commit, state }) {
+    const networkId = await global.web3.eth.net.getId()
+    if (state.networkId !== networkId) {
+      commit('addLog', 'setNetwork ' + networkId)
+      commit('setNetwork', networkId)
     }
   },
   async getAccount({ commit, state }) {
-    try {
-      let accounts = await global.web3.eth.getAccounts()
-      if (accounts.length && state.account !== accounts[0]) {
-        commit('setUnlocked', true)
-        commit('setAccount', accounts[0])
-        commit('addLog', 'setAccount ' + accounts[0])
-      } else if (!accounts.length && (state.account || state.unlocked)) {
-        commit('setUnlocked', false)
-        commit('setAccount', null)
-        commit('addLog', 'setAccount ' + null)
-      }
-    } catch (error) {
-      console.error(error)
-      commit('setError', 'Account Error')
+    let accounts = await global.web3.eth.getAccounts()
+    if (accounts.length && state.account !== accounts[0]) {
+      commit('setUnlocked', true)
+      commit('setAccount', accounts[0])
+      commit('addLog', 'setAccount ' + accounts[0])
+    } else if (!accounts.length && (state.account || state.unlocked)) {
+      commit('setUnlocked', false)
+      commit('setAccount', null)
+      commit('addLog', 'setAccount ' + null)
+      return new Error('account-locked')
     }
   },
   async getContracts({ state, commit }) {
-    try {
+    if (Patches.networks[state.networkId]) {
       const _Patches = new global.web3.eth.Contract(
         Patches.abi,
         Patches.networks[state.networkId].address
@@ -73,39 +146,32 @@ export default {
       )
       commit('setContracts', { Patches: _Patches, Controller: _Controller })
       commit('addLog', 'setContracts')
-    } catch (error) {
-      console.error(error)
-      commit('setError', 'Contract Error')
+    } else {
+      throw new Error('wrong-network')
     }
   },
   async getAdmin({ commit, state }) {
-    try {
-      let admin = await state.Patches.methods.getWallet().call()
-      let billy = await state.Patches.methods.getBilly().call()
-      commit('setAdmin', admin)
-      commit('setBilly', billy)
-      commit('addLog', 'setAdmin ' + admin)
-      commit('addLog', 'setBilly ' + billy)
-    } catch (error) {
-      commit('setError', error.message)
-    }
+    let admin = await state.Patches.methods.getWallet().call()
+    let billy = await state.Patches.methods.getBilly().call()
+    commit('setAdmin', admin)
+    commit('setBilly', billy)
+    commit('addLog', 'setAdmin ' + admin)
+    commit('addLog', 'setBilly ' + billy)
   },
   async queryPatches({ commit, state, dispatch }) {
-    try {
-      let balanceOf = await state.Patches.methods.totalSupply().call()
-      if (parseInt(balanceOf) !== state.patches.length) {
-        console.log(balanceOf)
-        commit('setPatches', [])
-        dispatch('queryPatch', { key: 0, balanceOf })
-      }
-    } catch (error) {
-      console.error(error)
-      commit('setError', 'Error retrieving Patch count')
+    let balanceOf = await state.Patches.methods.totalSupply().call()
+    if (parseInt(balanceOf) !== state.patches.length) {
+      commit('setPatches', [])
+      dispatch('queryPatch', { key: 0, balanceOf }).then(() => {
+        console.log('queried all patches')
+      }).catch((error) => {
+        console.log(error)
+      })
     }
   },
   queryPatch({ state, dispatch, commit }, { key, balanceOf }) {
     return new Promise(async (resolve, reject) => {
-      if (key >= balanceOf || !state.account) {
+      if (key >= balanceOf) {
         resolve()
       } else {
         let patchId = await state.Patches.methods
@@ -126,21 +192,16 @@ export default {
     })
   },
   async queryWorks({ state, commit, dispatch }, workId = 1) {
-    try {
-      let workExists = await state.Patches.methods.workExists(workId).call()
-      if (workExists) {
-        let workHash = await state.Patches.methods.workHash(workId).call()
-        let work = {
-          workId,
-          workHash
-        }
-        commit('addWork', work)
-        workId++
-        dispatch('queryWorks', workId)
+    let workExists = await state.Patches.methods.workExists(workId).call()
+    if (workExists) {
+      let workHash = await state.Patches.methods.workHash(workId).call()
+      let work = {
+        workId,
+        workHash
       }
-    } catch (error) {
-      console.log(error)
-      commit('setError', error.message)
+      commit('addWork', work)
+      workId++
+      dispatch('queryWorks', workId)
     }
   },
   async reserved({ state, commit, dispatch }, workId) {

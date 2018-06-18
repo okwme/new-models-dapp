@@ -7,6 +7,12 @@ export default {
     }
     state.log.unshift(log)
   },
+  setQuerying(state, bool) {
+    state.querying = bool
+  },
+  setTryAgain(state, bool) {
+    state.tryAgain = bool
+  },
   setUnlocked(state, unlocked) {
     state.unlocked = unlocked
   },
@@ -45,6 +51,26 @@ export default {
       state.works.splice(workIndex, 1, work)
     } else {
       state.works.push(work)
+    }
+  },
+  markAllNotifications (state) {
+    if (!state.notifications.length) return
+    let opposite = !state.notifications[state.notifications.length - 1].seen
+    state.notifications.forEach(n => { n.seen = opposite })
+  },
+  addNotification(state, notification) {
+    if (state.notifications.length && notification.body === state.notifications[0].body) return
+    let uid = (new Date()).getTime().toString(16)
+    notification.id = uid
+    notification.seen = false
+    state.notifications.unshift(notification)
+  },
+  removeNotification(state, id) {
+    let nIndex = state.notifications.findIndex(n => n.id === id)
+    if (nIndex > -1) {
+      let notification = state.notifications[nIndex]
+      notification.seen = true
+      state.notifications.splice(nIndex, 1, notification)
     }
   }
 }
